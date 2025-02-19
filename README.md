@@ -65,7 +65,7 @@ By default, the application looks for `config.toml` in the root directory.
 
 ---
 
-## 🤮 Running Tests
+## 🧪 Running Tests
 ```sh
 go test ./...
 ```
