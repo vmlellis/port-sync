@@ -1,5 +1,0 @@
-# Path to the ports.json file
-ports_file = "data/ports.json"
-
-# Whether to load the ports.json file on startup
-load_on_startup = true
