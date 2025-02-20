@@ -21,6 +21,11 @@ func NewPortHandler(service contract.PortService, processor contract.ProcessorSe
 
 // GetPort retrieves a port by its ID.
 func (h *PortHandler) GetPort(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		JSONError(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 3 || pathParts[1] != "ports" {
 		JSONError(w, "Invalid request path", http.StatusBadRequest)
