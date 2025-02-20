@@ -1,8 +1,12 @@
 package storage
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"sync"
 
+	"github.com/klauspost/compress/zstd"
 	"github.com/vmlellis/port-sync/src/internal/domain/entity"
 )
 
@@ -18,7 +22,14 @@ func NewMemoryStore() *MemoryStore {
 
 // Save inserts or updates a port record in memory.
 func (s *MemoryStore) Save(port *entity.Port) {
-	s.data.Store(port.ID, port)
+	var buf bytes.Buffer
+	jsonData, _ := json.Marshal(port)
+
+	encoder, _ := zstd.NewWriter(&buf) // Open a writer for each compression
+	_, _ = encoder.Write(jsonData)
+	encoder.Close()
+
+	s.data.Store(port.ID, buf.Bytes())
 }
 
 // Get retrieves a port by its unique identifier.
@@ -27,5 +38,12 @@ func (s *MemoryStore) Get(id string) (*entity.Port, bool) {
 	if !ok {
 		return nil, false
 	}
-	return val.(*entity.Port), true
+
+	decoder, _ := zstd.NewReader(bytes.NewReader(val.([]byte)))
+	decompressed, _ := io.ReadAll(decoder)
+	decoder.Close()
+
+	var port entity.Port
+	json.Unmarshal(decompressed, &port)
+	return &port, true
 }
