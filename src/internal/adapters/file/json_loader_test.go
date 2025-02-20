@@ -1,38 +1,55 @@
 package file_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/vmlellis/port-sync/src/internal/adapters/file"
+	"github.com/vmlellis/port-sync/src/internal/adapters/processor"
 	"github.com/vmlellis/port-sync/src/internal/adapters/storage"
-	"github.com/vmlellis/port-sync/src/internal/domain/entity"
+	"github.com/vmlellis/port-sync/src/internal/domain/service"
 )
 
-func TestMemoryStore_SaveAndGet(t *testing.T) {
+func TestProcessJSONFile(t *testing.T) {
+	// Create a temporary JSON file
+	jsonData := `{
+			"PORT1": {
+					"name": "Test Port",
+					"city": "Test City",
+					"country": "Test Country",
+					"coordinates": [12.34, 56.78],
+					"province": "Test Province",
+					"timezone": "UTC+1",
+					"unlocs": ["UNLOC1"],
+					"code": "1234"
+			}
+	}`
+
+	tmpFile, err := os.CreateTemp("", "ports.json")
+	assert.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+
+	_, err = tmpFile.Write([]byte(jsonData))
+	assert.NoError(t, err)
+	tmpFile.Close()
+
+	// Initialize storage and service
 	store := storage.NewMemoryStore()
+	portService := service.NewPortService(store)
+	processorService := processor.NewParallelProcessor(portService, processor.ParallelProcessorOpts{})
 
-	port := &entity.Port{
-		ID:       "PORT1",
-		Name:     "Test Port",
-		City:     "Test City",
-		Country:  "Test Country",
-		Province: "Test Province",
-	}
+	// Process the JSON file
+	err = file.ProcessJSONFile(tmpFile.Name(), portService, processorService)
+	assert.NoError(t, err)
 
-	store.Save(port)
-	retrievedPort, found := store.Get("PORT1")
-
+	// Verify that the port was stored
+	retrievedPort, found := portService.GetPort("PORT1")
 	assert.True(t, found, "Port should be found in storage")
-	assert.Equal(t, port.ID, retrievedPort.ID)
-	assert.Equal(t, port.Name, retrievedPort.Name)
-	assert.Equal(t, port.City, retrievedPort.City)
-	assert.Equal(t, port.Country, retrievedPort.Country)
-	assert.Equal(t, port.Province, retrievedPort.Province)
-}
-
-func TestMemoryStore_GetNonExistentPort(t *testing.T) {
-	store := storage.NewMemoryStore()
-
-	_, found := store.Get("INVALID_PORT")
-	assert.False(t, found, "Port should not be found in storage")
+	assert.Equal(t, "Test Port", retrievedPort.Name)
+	assert.Equal(t, "Test City", retrievedPort.City)
+	assert.Equal(t, "Test Country", retrievedPort.Country)
+	assert.Equal(t, "Test Province", retrievedPort.Province)
+	assert.Equal(t, "UTC+1", retrievedPort.Timezone)
+	assert.Equal(t, "1234", retrievedPort.Code)
 }

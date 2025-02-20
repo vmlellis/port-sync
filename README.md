@@ -97,9 +97,7 @@ curl -X GET "http://localhost:8080/ports/PORT_ID"
 ### **2️⃣ Bulk Upsert Ports**
 Upload a new `ports.json` file to update all ports:
 ```sh
-curl -X POST "http://localhost:8080/ports/bulk" \
-     -H "Content-Type: application/json" \
-     --data-binary @data/ports.json
+curl -X POST "http://localhost:8080/ports/bulk" -F "file=@data/ports.json"
 ```
 ✔ **Example `ports.json`**
 ```json

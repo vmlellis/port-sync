@@ -12,8 +12,7 @@ func TestLoadConfig(t *testing.T) {
 	// Create a temporary config file
 	configData := `ports_file = "data/ports.json"
 load_on_startup = true
-[server]
-port = 8080`
+`
 
 	tmpFile, err := os.CreateTemp("", "config.toml")
 	assert.NoError(t, err)

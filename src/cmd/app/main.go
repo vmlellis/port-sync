@@ -11,6 +11,7 @@ import (
 
 	"github.com/vmlellis/port-sync/src/internal/adapters/config"
 	"github.com/vmlellis/port-sync/src/internal/adapters/file"
+	"github.com/vmlellis/port-sync/src/internal/adapters/processor"
 	"github.com/vmlellis/port-sync/src/internal/adapters/storage"
 
 	httpadapter "github.com/vmlellis/port-sync/src/internal/adapters/http"
@@ -27,12 +28,13 @@ func main() {
 	// Initialize storage and service
 	store := storage.NewMemoryStore()
 	portService := service.NewPortService(store)
-	handler := httpadapter.NewPortHandler(portService)
+	processorService := processor.NewParallelProcessor(portService, processor.ParallelProcessorOpts{})
+	handler := httpadapter.NewPortHandler(portService, processorService)
 
 	// Load initial data if enabled in config
 	if config.LoadOnStartup {
 		fmt.Println("Loading data from", config.PortsFile)
-		if err := file.ProcessJSONFile(config.PortsFile, portService); err != nil {
+		if err := file.ProcessJSONFile(config.PortsFile, portService, processorService); err != nil {
 			fmt.Println("Error loading data:", err)
 			os.Exit(1)
 		}

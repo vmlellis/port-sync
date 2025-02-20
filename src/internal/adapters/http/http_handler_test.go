@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"bytes"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	httpadapter "github.com/vmlellis/port-sync/src/internal/adapters/http"
+	"github.com/vmlellis/port-sync/src/internal/adapters/processor"
 	"github.com/vmlellis/port-sync/src/internal/adapters/storage"
 	"github.com/vmlellis/port-sync/src/internal/domain/entity"
 	"github.com/vmlellis/port-sync/src/internal/domain/service"
@@ -18,7 +20,8 @@ func TestGetPortHandler(t *testing.T) {
 
 	store := storage.NewMemoryStore()
 	portService := service.NewPortService(store)
-	handler := httpadapter.NewPortHandler(portService)
+	processorService := processor.NewParallelProcessor(portService, processor.ParallelProcessorOpts{})
+	handler := httpadapter.NewPortHandler(portService, processorService)
 
 	port := &entity.Port{
 		ID:       "PORT1",
@@ -42,7 +45,8 @@ func TestGetPortHandler(t *testing.T) {
 func TestGetPortHandler_NotFound(t *testing.T) {
 	store := storage.NewMemoryStore()
 	portService := service.NewPortService(store)
-	handler := httpadapter.NewPortHandler(portService)
+	processorService := processor.NewParallelProcessor(portService, processor.ParallelProcessorOpts{})
+	handler := httpadapter.NewPortHandler(portService, processorService)
 
 	req, err := http.NewRequest("GET", "/ports/INVALID_PORT", nil)
 	assert.NoError(t, err)
@@ -56,7 +60,8 @@ func TestGetPortHandler_NotFound(t *testing.T) {
 func TestBulkUploadPortsHandler(t *testing.T) {
 	store := storage.NewMemoryStore()
 	portService := service.NewPortService(store)
-	handler := httpadapter.NewPortHandler(portService)
+	processorService := processor.NewParallelProcessor(portService, processor.ParallelProcessorOpts{})
+	handler := httpadapter.NewPortHandler(portService, processorService)
 
 	jsonPayload := `{
 			"PORT1": {
@@ -81,9 +86,21 @@ func TestBulkUploadPortsHandler(t *testing.T) {
 			}
 	}`
 
-	req, err := http.NewRequest("POST", "/ports/bulk", bytes.NewBuffer([]byte(jsonPayload)))
+	var requestBody bytes.Buffer
+	writer := multipart.NewWriter(&requestBody)
+
+	// Create a form field for the file
+	fileWriter, err := writer.CreateFormFile("file", "ports.json")
 	assert.NoError(t, err)
-	req.Header.Set("Content-Type", "application/json")
+
+	_, err = fileWriter.Write([]byte(jsonPayload))
+	assert.NoError(t, err)
+
+	writer.Close()
+
+	req, err := http.NewRequest("POST", "/ports/bulk", &requestBody)
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	rr := httptest.NewRecorder()
 	handler.BulkUploadPorts(rr, req)
