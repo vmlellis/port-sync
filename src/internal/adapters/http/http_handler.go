@@ -50,7 +50,7 @@ func (h *PortHandler) BulkUploadPorts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := r.ParseMultipartForm(100 * 1024 * 1024); err != nil { // Limit: 100MB
+	if err := r.ParseMultipartForm(50 * 1024 * 1024); err != nil { // Limit: 50MB
 		JSONError(w, "File too large", http.StatusRequestEntityTooLarge)
 		return
 	}
