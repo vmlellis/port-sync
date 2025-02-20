@@ -42,7 +42,7 @@ go run src/cmd/app/main.go
 ### **Run with Docker**
 ```sh
 docker build -t port-sync .
-docker run --rm -p 8080:8080 -v $(pwd)/data:/root/data -v $(pwd)/config.toml:/config.toml --memory=200m  --name port-sync-container port-sync
+docker run --rm -p 8080:8080 -v $(pwd)/data:/root/data -v $(pwd)/config.toml:/root/config.toml --memory=200m  --name port-sync-container port-sync
 ```
 
 ---
