@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"github.com/vmlellis/port-sync/src/internal/adapters/storage"
 	"github.com/vmlellis/port-sync/src/internal/domain/entity"
 	"github.com/vmlellis/port-sync/src/internal/domain/service"

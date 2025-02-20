@@ -2,36 +2,35 @@ package http
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 
 	"github.com/vmlellis/port-sync/src/internal/domain/contract"
-	"github.com/vmlellis/port-sync/src/internal/domain/entity"
 )
 
 // PortHandler provides HTTP endpoints to interact with port data.
 type PortHandler struct {
-	service contract.PortService
+	service   contract.PortService
+	processor contract.ProcessorService
 }
 
 // NewPortHandler creates a new instance of PortHandler.
-func NewPortHandler(service contract.PortService) *PortHandler {
-	return &PortHandler{service: service}
+func NewPortHandler(service contract.PortService, processor contract.ProcessorService) *PortHandler {
+	return &PortHandler{service: service, processor: processor}
 }
 
 // GetPort retrieves a port by its ID.
 func (h *PortHandler) GetPort(w http.ResponseWriter, r *http.Request) {
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 3 || pathParts[1] != "ports" {
-		http.Error(w, "Invalid request path", http.StatusBadRequest)
+		JSONError(w, "Invalid request path", http.StatusBadRequest)
 		return
 	}
 	id := pathParts[2]
 
 	port, found := h.service.GetPort(id)
 	if !found {
-		http.Error(w, "Port not found", http.StatusNotFound)
+		JSONError(w, "Port not found", http.StatusNotFound)
 		return
 	}
 
@@ -42,27 +41,23 @@ func (h *PortHandler) GetPort(w http.ResponseWriter, r *http.Request) {
 // BulkUploadPorts handles bulk upload of ports from a JSON file.
 func (h *PortHandler) BulkUploadPorts(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		JSONError(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
 
-	body, err := io.ReadAll(r.Body)
+	if err := r.ParseMultipartForm(100 * 1024 * 1024); err != nil { // Limit: 100MB
+		JSONError(w, "File too large", http.StatusRequestEntityTooLarge)
+		return
+	}
+
+	file, _, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+		JSONError(w, "Invalid file upload", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer file.Close()
 
-	var ports map[string]entity.Port
-	if err := json.Unmarshal(body, &ports); err != nil {
-		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
-		return
-	}
-
-	for id, port := range ports {
-		port.ID = id
-		h.service.SavePort(&port)
-	}
+	err = h.processor.Process(file)
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("Ports uploaded successfully"))
