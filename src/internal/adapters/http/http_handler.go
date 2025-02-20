@@ -60,7 +60,8 @@ func (h *PortHandler) BulkUploadPorts(w http.ResponseWriter, r *http.Request) {
 	err = h.processor.Process(file)
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("Ports uploaded successfully"))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(CreatedResponse{Message: "Ports uploaded successfully"})
 }
 
 // RegisterRoutes sets up the HTTP routes for port operations.
