@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/vmlellis/port-sync/src/internal/domain/contract"
 	"github.com/vmlellis/port-sync/src/internal/domain/entity"
 )
@@ -16,11 +18,11 @@ func NewPortService(repo contract.PortRepository) contract.PortService {
 }
 
 // SavePort inserts or updates a port record in the repository.
-func (s *portService) SavePort(port *entity.Port) {
-	s.repo.Save(port)
+func (s *portService) SavePort(ctx context.Context, port *entity.Port) {
+	s.repo.Save(ctx, port)
 }
 
 // GetPort retrieves a port by its unique identifier.
-func (s *portService) GetPort(id string) (*entity.Port, bool) {
-	return s.repo.Get(id)
+func (s *portService) GetPort(ctx context.Context, id string) (*entity.Port, bool) {
+	return s.repo.Get(ctx, id)
 }

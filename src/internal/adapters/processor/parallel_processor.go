@@ -2,6 +2,7 @@ package processor
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -70,7 +71,7 @@ func (p *ParallelProcessor) Process(rd io.Reader) error {
 		go func() {
 			defer wg.Done()
 			for port := range portChannel {
-				p.service.SavePort(port) // Process and store each port
+				p.service.SavePort(context.Background(), port) // Process and store each port
 			}
 		}()
 	}
