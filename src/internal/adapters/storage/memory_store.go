@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"sync"
 
 	"github.com/vmlellis/port-sync/src/internal/domain/entity"
@@ -17,15 +18,26 @@ func NewMemoryStore() *MemoryStore {
 }
 
 // Save inserts or updates a port record in memory.
-func (s *MemoryStore) Save(port *entity.Port) {
+func (s *MemoryStore) Save(_ context.Context, port *entity.Port) error {
 	s.data.Store(port.ID, port)
+	return nil
 }
 
 // Get retrieves a port by its unique identifier.
-func (s *MemoryStore) Get(id string) (*entity.Port, bool) {
+func (s *MemoryStore) Get(_ context.Context, id string) (*entity.Port, bool) {
 	val, ok := s.data.Load(id)
 	if !ok {
 		return nil, false
 	}
 	return val.(*entity.Port), true
+}
+
+// Ping does nothing for MemoryStore.
+func (s *MemoryStore) Ping(_ context.Context) error {
+	return nil
+}
+
+// Close does nothing for MemoryStore.
+func (s *MemoryStore) Close() error {
+	return nil
 }

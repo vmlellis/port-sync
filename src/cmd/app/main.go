@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -26,7 +27,18 @@ func main() {
 	}
 
 	// Initialize storage and service
-	store := storage.NewMemoryStore()
+	store, err := storage.NewPortRepository(context.Background(), config.StorageType, storage.StorageOpts{
+		RedisAddr:     config.RedisConfig.Addr,
+		RedisPassword: config.RedisConfig.Password,
+		RedisDB:       config.RedisConfig.DB,
+	})
+	if err != nil {
+		fmt.Println("Error loading storage:", err)
+		os.Exit(1)
+	}
+
+	defer store.Close()
+
 	portService := service.NewPortService(store)
 	processorService := processor.NewParallelProcessor(portService, processor.ParallelProcessorOpts{})
 	handler := httpadapter.NewPortHandler(portService, processorService)

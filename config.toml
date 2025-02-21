@@ -2,4 +2,13 @@
 ports_file = "data/ports.json"
 
 # Whether to load the ports.json file on startup
-load_on_startup = true
+load_on_startup = false
+
+# Storage type: "internal" for in-memory, "redis" for Redis
+storage_type = "redis"
+
+# Redis configuration (only used if storage_type = "redis")
+[redis]
+Addr = "redis:6379"
+Password = ""
+DB = 0

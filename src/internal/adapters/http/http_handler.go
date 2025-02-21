@@ -33,7 +33,7 @@ func (h *PortHandler) GetPort(w http.ResponseWriter, r *http.Request) {
 	}
 	id := pathParts[2]
 
-	port, found := h.service.GetPort(id)
+	port, found := h.service.GetPort(r.Context(), id)
 	if !found {
 		JSONError(w, "Port not found", http.StatusNotFound)
 		return

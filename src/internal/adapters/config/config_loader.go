@@ -6,8 +6,17 @@ import (
 
 // Config represents the configuration structure
 type Config struct {
-	PortsFile     string `toml:"ports_file"`
-	LoadOnStartup bool   `toml:"load_on_startup"`
+	PortsFile     string      `toml:"ports_file"`
+	LoadOnStartup bool        `toml:"load_on_startup"`
+	StorageType   string      `toml:"storage_type"`
+	RedisConfig   RedisConfig `toml:"redis"`
+}
+
+// RedisConfig holds Redis-related configuration
+type RedisConfig struct {
+	Addr     string `toml:"Addr"`
+	Password string `toml:"Password"`
+	DB       int    `toml:"DB"`
 }
 
 // LoadConfig reads configuration from a TOML file
